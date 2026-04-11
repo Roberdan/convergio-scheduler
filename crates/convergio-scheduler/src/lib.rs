@@ -1,21 +1,13 @@
-//! # convergio-scheduler
+//! convergio-scheduler — Policy-based task scheduling.
 //!
-//! Policy-based task scheduling with capability matching, cost optimization, and load balancing
-//!
-//! Part of the [Convergio](https://github.com/Roberdan/convergio) ecosystem.
+//! Scores mesh peers by capability match, cost, load, and locality,
+//! then assigns tasks to the best candidate using configurable weights.
 
+pub mod ext;
+pub mod policy;
 pub mod routes;
+pub mod schema;
+pub mod types;
 
-// Uncomment as needed:
-// pub mod ext;
-// pub mod mcp_defs;
-// pub mod schema;
-// pub mod types;
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert!(true);
-    }
-}
+pub use ext::SchedulerExtension;
+pub mod mcp_defs;
