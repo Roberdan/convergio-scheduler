@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/Roberdan/convergio-scheduler/compare/convergio-scheduler-v0.1.2...convergio-scheduler-v0.1.3) (2026-04-12)
+
+
+### Bug Fixes
+
+* audit improvements - bug fixes, optimizations, and test coverage ([#4](https://github.com/Roberdan/convergio-scheduler/issues/4)) ([bca7908](https://github.com/Roberdan/convergio-scheduler/commit/bca7908f77c4c118629d5a8cba91febec83cfd05))
+
 ## [0.1.2](https://github.com/Roberdan/convergio-scheduler/compare/convergio-scheduler-v0.1.1...convergio-scheduler-v0.1.2) (2026-04-12)
 
 
