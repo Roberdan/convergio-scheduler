@@ -60,13 +60,13 @@ async fn handle_decide(
         }));
     }
 
-    let candidates: Vec<_> = peers
+    let mut candidates: Vec<_> = peers
         .iter()
         .map(|(name, caps)| policy::score_peer(name, caps, 0.0, &req, &pol))
         .collect();
 
-    let best = match policy::select_best(candidates.clone()) {
-        Some(b) => b,
+    let best_idx = match policy::select_best_index(&candidates) {
+        Some(i) => i,
         None => {
             return Json(serde_json::json!({
                 "error": {"code": "NO_MATCH", "message": "no suitable peer found"}
@@ -74,6 +74,7 @@ async fn handle_decide(
         }
     };
 
+    let best = candidates.swap_remove(best_idx);
     let tier = req.tier_hint.clone().unwrap_or_else(|| "t2".into());
     let decision = SchedulingDecision {
         task_id: req.task_id,
@@ -85,14 +86,11 @@ async fn handle_decide(
             best.score,
             best.capabilities_match * 100.0
         ),
-        alternatives: candidates
-            .into_iter()
-            .filter(|c| c.peer_name != best.peer_name)
-            .collect(),
+        alternatives: candidates,
     };
 
     // Persist decision to history.
-    let _ = conn.execute(
+    if let Err(e) = conn.execute(
         "INSERT INTO scheduling_decisions (task_id, plan_id, assigned_peer, \
          assigned_tier, estimated_cost, reason) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
         params![
@@ -103,7 +101,9 @@ async fn handle_decide(
             decision.estimated_cost,
             decision.reason,
         ],
-    );
+    ) {
+        tracing::warn!("failed to persist scheduling decision: {e}");
+    }
 
     Json(serde_json::to_value(&decision).unwrap_or_default())
 }
@@ -152,7 +152,7 @@ async fn handle_history(
         Ok(c) => c,
         Err(_) => return Json(vec![]),
     };
-    let limit = params.limit.unwrap_or(20).min(100);
+    let limit = params.limit.unwrap_or(20).clamp(1, 100);
     let mut stmt = match conn.prepare(
         "SELECT task_id, assigned_peer, assigned_tier, estimated_cost, reason \
          FROM scheduling_decisions ORDER BY decided_at DESC LIMIT ?1",
@@ -185,14 +185,16 @@ fn load_peer_capabilities(conn: &rusqlite::Connection) -> Vec<(String, Vec<Strin
         Ok(s) => s,
         Err(_) => return vec![],
     };
-    let rows: Vec<(String, String)> = stmt
-        .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
-        .unwrap_or_else(|_| panic!("query failed"))
-        .filter_map(|r| r.ok())
-        .collect();
-    let mut map: std::collections::HashMap<String, Vec<String>> = std::collections::HashMap::new();
-    for (peer, cap) in rows {
-        map.entry(peer).or_default().push(cap);
+    let rows = match stmt.query_map([], |row| {
+        Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+    }) {
+        Ok(r) => r,
+        Err(_) => return vec![],
+    };
+    let mut map: std::collections::BTreeMap<String, Vec<String>> =
+        std::collections::BTreeMap::new();
+    for row in rows.flatten() {
+        map.entry(row.0).or_default().push(row.1);
     }
     map.into_iter().collect()
 }

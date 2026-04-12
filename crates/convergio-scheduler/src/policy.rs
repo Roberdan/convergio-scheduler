@@ -56,8 +56,26 @@ pub fn select_best(candidates: Vec<PeerCandidate>) -> Option<PeerCandidate> {
     candidates.into_iter().max_by(|a, b| {
         a.score
             .partial_cmp(&b.score)
-            .unwrap_or(std::cmp::Ordering::Equal)
+            .unwrap_or(std::cmp::Ordering::Less)
     })
+}
+
+/// Return the index of the best peer (avoids cloning the candidate vec).
+pub fn select_best_index(candidates: &[PeerCandidate]) -> Option<usize> {
+    if candidates.is_empty() {
+        return None;
+    }
+    let mut best = 0;
+    for (i, c) in candidates.iter().enumerate().skip(1) {
+        if c.score
+            .partial_cmp(&candidates[best].score)
+            .unwrap_or(std::cmp::Ordering::Less)
+            == std::cmp::Ordering::Greater
+        {
+            best = i;
+        }
+    }
+    Some(best)
 }
 
 /// Return the default scheduling policy.
@@ -187,6 +205,84 @@ mod tests {
         ];
         let best = select_best(candidates).unwrap();
         assert_eq!(best.peer_name, "peer-b");
+    }
+
+    #[test]
+    fn test_select_best_index() {
+        let candidates = vec![
+            PeerCandidate {
+                peer_name: "peer-a".into(),
+                score: 0.6,
+                capabilities_match: 1.0,
+                cost_score: 0.5,
+                load_score: 0.3,
+                locality_bonus: 0.0,
+            },
+            PeerCandidate {
+                peer_name: "peer-b".into(),
+                score: 0.9,
+                capabilities_match: 1.0,
+                cost_score: 0.8,
+                load_score: 0.8,
+                locality_bonus: 1.0,
+            },
+        ];
+        let idx = select_best_index(&candidates).unwrap();
+        assert_eq!(idx, 1);
+        assert_eq!(candidates[idx].peer_name, "peer-b");
+    }
+
+    #[test]
+    fn test_select_best_index_empty() {
+        let candidates: Vec<PeerCandidate> = vec![];
+        assert!(select_best_index(&candidates).is_none());
+    }
+
+    #[test]
+    fn test_select_best_empty() {
+        let candidates: Vec<PeerCandidate> = vec![];
+        assert!(select_best(candidates).is_none());
+    }
+
+    #[test]
+    fn test_estimate_tier_costs() {
+        assert!((estimate_tier_cost(Some("t1")) - 0.01).abs() < f64::EPSILON);
+        assert!((estimate_tier_cost(Some("t2")) - 0.05).abs() < f64::EPSILON);
+        assert!((estimate_tier_cost(Some("t3")) - 0.20).abs() < f64::EPSILON);
+        assert!((estimate_tier_cost(Some("t4")) - 1.00).abs() < f64::EPSILON);
+        assert!((estimate_tier_cost(None) - 0.10).abs() < f64::EPSILON);
+        assert!((estimate_tier_cost(Some("unknown")) - 0.10).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_score_peer_no_budget() {
+        let policy = default_policy();
+        let mut req = sample_request();
+        req.max_cost_usd = None;
+        let caps = vec!["gpu".into(), "voice".into()];
+        let c = score_peer("peer-x", &caps, 0.0, &req, &policy);
+        assert!((c.cost_score - 0.5).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_score_peer_empty_required_caps() {
+        let policy = default_policy();
+        let mut req = sample_request();
+        req.required_capabilities = vec![];
+        let caps = vec!["gpu".into()];
+        let c = score_peer("peer-x", &caps, 0.0, &req, &policy);
+        assert!((c.capabilities_match - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_score_peer_high_load() {
+        let policy = default_policy();
+        let req = sample_request();
+        let caps = vec!["gpu".into(), "voice".into()];
+        let low_load = score_peer("peer-x", &caps, 0.1, &req, &policy);
+        let high_load = score_peer("peer-x", &caps, 0.9, &req, &policy);
+        assert!(low_load.load_score > high_load.load_score);
+        assert!(low_load.score > high_load.score);
     }
 
     #[test]
