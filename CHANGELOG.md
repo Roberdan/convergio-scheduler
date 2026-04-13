@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/Roberdan/convergio-scheduler/compare/v0.1.4...v0.1.5) (2026-04-13)
+
+
+### Bug Fixes
+
+* regenerate Cargo.lock after SDK bump ([#7](https://github.com/Roberdan/convergio-scheduler/issues/7)) ([3ea6dca](https://github.com/Roberdan/convergio-scheduler/commit/3ea6dcaa25395a498f31af4543995fa602eca99a))
+
 ## [0.1.4](https://github.com/Roberdan/convergio-scheduler/compare/v0.1.3...v0.1.4) (2026-04-13)
 
 
