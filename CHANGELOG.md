@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.7](https://github.com/Roberdan/convergio-scheduler/compare/v0.1.6...v0.1.7) (2026-04-13)
+
+
+### Bug Fixes
+
+* pass CARGO_REGISTRY_TOKEN to release workflow ([a0ed837](https://github.com/Roberdan/convergio-scheduler/commit/a0ed83793c7e09ed60de7c113ba33f4c2764858f))
+
 ## [0.1.6](https://github.com/Roberdan/convergio-scheduler/compare/v0.1.5...v0.1.6) (2026-04-13)
 
 
