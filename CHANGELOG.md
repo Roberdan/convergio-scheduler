@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6](https://github.com/Roberdan/convergio-scheduler/compare/v0.1.5...v0.1.6) (2026-04-13)
+
+
+### Bug Fixes
+
+* add crates.io publishing metadata (description, repository) ([6835858](https://github.com/Roberdan/convergio-scheduler/commit/6835858c159582c4bebfc2cb6e8be715e165e320))
+
 ## [0.1.5](https://github.com/Roberdan/convergio-scheduler/compare/v0.1.4...v0.1.5) (2026-04-13)
 
 
