@@ -4,6 +4,7 @@ description = "Policy-based task scheduling with capability matching, cost optim
 version = "0.1.5"
 edition.workspace = true
 license.workspace = true
+repository = "https://github.com/Roberdan/convergio-scheduler"
 
 [dependencies]
 convergio-types = { workspace = true }
