@@ -209,7 +209,7 @@ dependencies = [
 
 [[package]]
 name = "convergio-scheduler"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "axum",
  "convergio-db",
